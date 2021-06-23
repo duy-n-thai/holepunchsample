@@ -4,43 +4,40 @@
  * and open the template in the editor.
  */
 
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 
 /**
  *
  * @author user
  */
-public class ClientB {
+public class TestClientB {
 
     private static InetAddress serverIP;
-    private static int serverTcpPort=9000;
-    private static int serverUdpPort=9001;
+    private static int serverTcpPort;
+    private static int serverUdpPort;
     private Socket socket;
-    private final BufferedReader in;
-    private final BufferedOutputStream out;
-    private final DatagramSocket dgSocket;
+    private BufferedReader in = null;
+    private BufferedOutputStream out = null;
+    private DatagramSocket dgSocket = null;
     private DatagramPacket sendPacket;
     private String resp = "";
     private String[] tokens = null;
     private boolean respRead;
 
-    public ClientB(InetAddress ip, int tcpPort, int udpPort) throws IOException {
+    public TestClientB(InetAddress ip, int tcpPort, int udpPort) throws IOException {
 
         //create a socket to connect to the server
         try {
             socket = new Socket(ip, tcpPort);
+            System.out.println("Connected to server");
         } catch (IOException ex) {
             System.err.println("Exception creating a socket: " + ex);
         }
+
 
         //create input and output stream
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -50,25 +47,20 @@ public class ClientB {
         dgSocket = new DatagramSocket();
 
         //create a byte array to hold the initial message to be sent to the server
-        byte[] sendData = "two".getBytes();
+        byte[] sendData = "one".getBytes();
 
         //create a packet to send udp messge 
         sendPacket = new DatagramPacket(sendData, sendData.length, ip, udpPort);
 
         //create a loop to send the udp packets to the server
-        /**
-         * IMPORTANT! Using a loop to send the packets is just to ensure that
-         * the UDP packets reach the server. There may be a loss of UDP packets
-         * for its unreliability. You can change the loop count if required.
-         */
         System.out.println("sending initial udp message");
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10; i++) {
             dgSocket.send(sendPacket);
             System.out.println("" + i);
         }
         System.out.println("Sent initial udp messages");
-
         //create a loop to read the TCP response from the server
+
         while (respRead != true) {
             resp = in.readLine();
 
@@ -78,22 +70,23 @@ public class ClientB {
             System.out.println("My PUBLIC IP seen by server: " + tokens[0]);
             System.out.println("My PUBLIC UDP PORT seen by server: " + tokens[1]);
             System.out.println("****************************************\n");
-  
+
             System.out.println("****************************************");
-            System.out.println("CLIENT A PUBLIC IP seen by server: "+tokens[2] );
-            System.out.println("CLIENT A PUBLIC UDP PORT seen by server: "+tokens[3] );
+            System.out.println("CLIENT B PUBLIC IP seen by server: " + tokens[2]);
+            System.out.println("CLIENT B PUBLIC UDP PORT seen by server: " + tokens[3]);
             System.out.println("****************************************");
-            
+
             respRead = true;
 
             //ACK SERVER
-            out.write("ackTwo".getBytes());
+            out.write("ackOne".getBytes());
             out.write('\n');
             out.flush();
 
         }
 
         //Create thread to receive UDP packets 
+        System.out.println("Begin to receive UDP packages...");
         new Thread(new Runnable() {
             private String udpMsg = "";
 
@@ -118,12 +111,13 @@ public class ClientB {
         }).start();
 
         //create Loop to send udp packets
+        System.out.println("Begin to send UDP packages...");
         int j = 0;
         String msg = "";
         while (true) {
             msg = "I AM CLIENT B " + j;
             sendData = msg.getBytes();
-              DatagramPacket sp = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(tokens[2].trim()), Integer.parseInt(tokens[3].trim()));
+            DatagramPacket sp = new DatagramPacket(sendData, sendData.length, InetAddress.getByName(tokens[2].trim()), Integer.parseInt(tokens[3].trim()));
             dgSocket.send(sp);
             j++;
             try{
@@ -131,13 +125,11 @@ public class ClientB {
             }catch(Exception e){
                 System.err.println("Exception in Thread sleep"+e);
             }
-            
         }
-
     }
 
     public static void main(String[] args) throws UnknownHostException, IOException {
-      
+
         if (args.length > 0) {
             try {
                 serverIP = InetAddress.getByName(args[0].trim());
@@ -145,19 +137,18 @@ public class ClientB {
                 serverUdpPort = Integer.parseInt(args[2].trim());
             } catch (Exception ex) {
                 System.err.println("Error in input");
-                System.out.println("USAGE: java ClientB serverIp serverTcpPort serverUdpPort");
-                System.out.println("Example: java ClientB 127.0.0.1 9000 9001");
+                System.out.println("USAGE: java ClientA serverIp serverTcpPort serverUdpPort");
+                System.out.println("Example: java ClientA 127.0.0.1 9000 9001");
                 System.exit(0);
             }
 
         } else {
-            System.out.println("ClientB running with default ports 9000 and 9001");
-            // serverIP = InetAddress.getByName("127.0.0.1");
-            serverIP = InetAddress.getByName("192.168.1.64");
+            System.out.println("ClientA running with default ports 9000 and 9001");
+            serverIP = InetAddress.getByName("192.168.2.9");
             serverTcpPort = 35905;
             serverUdpPort = 35906;
 
         }
-        new ClientB(serverIP, serverTcpPort, serverUdpPort);
+        new TestClientB(serverIP, serverTcpPort, serverUdpPort);
     }
 }

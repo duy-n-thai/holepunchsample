@@ -61,7 +61,7 @@ public class ClientA {
          * for its unreliability. You can change the loop count if required.
          */
         System.out.println("sending initial udp message");
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             dgSocket.send(sendPacket);
             System.out.println("" + i);
         }
@@ -149,9 +149,10 @@ public class ClientA {
 
         } else {
             System.out.println("ClientA running with default ports 9000 and 9001");
-            serverIP = InetAddress.getByName("127.0.0.1");
-            serverTcpPort = 9000;
-            serverUdpPort = 9001;
+            //serverIP = InetAddress.getByName("127.0.0.1");
+            serverIP = InetAddress.getByName("192.168.1.64");
+            serverTcpPort = 35905;
+            serverUdpPort = 35906;
 
         }
         new ClientA(serverIP, serverTcpPort, serverUdpPort);

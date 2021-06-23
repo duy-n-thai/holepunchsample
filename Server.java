@@ -22,8 +22,8 @@ import java.util.logging.Logger;
  */
 public class Server{
 
-    private int tcpPort=9000;
-    private int udpPort=9001;
+    private int tcpPort=35905;
+    private int udpPort=35906;
     
     private BufferedReader inA;
     private BufferedOutputStream outA;
@@ -85,18 +85,8 @@ public class Server{
         //Create input and output streams to read/write messages for CLIENT A
         inA = new BufferedReader(new InputStreamReader(clientA.getInputStream()));
         outA = new BufferedOutputStream(clientA.getOutputStream());
-
         
-        System.out.println("Waiting for Client B");
-        //Accept second client connection 
-        clientB = serverSocket.accept();
-        System.out.println("Client 2 connected " + clientA.getInetAddress() + " " + clientA.getPort());
-
-        //Create input and output streams to read/write messages for CLIENT B
-        inB = new BufferedReader(new InputStreamReader(clientB.getInputStream()));
-        outB = new BufferedOutputStream(clientB.getOutputStream());
-
-        //Create Datagram Socket for udp messages.
+	    //Create Datagram Socket for udp messages.
         DatagramSocket dgSocket = new DatagramSocket(udpPort);
 
         //Create Packet to receive UDP messages
@@ -129,6 +119,17 @@ public class Server{
          * *** END OF LOOP FOR CLIENT A ****
          */
 
+        
+        System.out.println("Waiting for Client B");
+        //Accept second client connection 
+        clientB = serverSocket.accept();
+        System.out.println("Client 2 connected " + clientB.getInetAddress() + " " + clientB.getPort());
+
+        //Create input and output streams to read/write messages for CLIENT B
+        inB = new BufferedReader(new InputStreamReader(clientB.getInputStream()));
+        outB = new BufferedOutputStream(clientB.getOutputStream());
+
+
         /**
          * IMPORTANT *** Create loop to receive initial UDP packets to detect
          * ***
@@ -140,9 +141,9 @@ public class Server{
 
             udpMsg = new String(receivePacket.getData());   //Get Data from UDP packet into a string
 
-            clientBIp = "" + receivePacket.getAddress().getHostAddress();     //get public IP of clientA from UDP Packet
+            clientBIp = "" + receivePacket.getAddress().getHostAddress();     //get public IP of clientB from UDP Packet
 
-            clientBPort = "" + receivePacket.getPort();      //get public UDP PORT of clientA from UDP Packet
+            clientBPort = "" + receivePacket.getPort();      //get public UDP PORT of clientB from UDP Packet
 
             if (udpMsg.trim().equals("two")) {
                 readClientB = true;
