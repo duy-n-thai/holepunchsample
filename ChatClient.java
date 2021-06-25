@@ -25,6 +25,7 @@ public class ChatClient {
     private final DatagramSocket _dg_socket;
 
     private final Object _syn = new Object();
+    private final Object _syn_socket = new Object();
 
     private ArrayList<PeerClient> _table = new ArrayList<>();
 
@@ -60,7 +61,9 @@ public class ChatClient {
                         default:
                             System.err.println("Invalid command:" + p._cmd);
                     }
-                } catch (InterruptedException ignored) {}
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
 
@@ -69,8 +72,10 @@ public class ChatClient {
             while(true) {
                 try {
                     DataPackage p = _peer_incoming_queue.take();
-                    System.out.println("B:" + p._data);
-                } catch (InterruptedException ignored) {}
+                    System.out.println("Receive from peer:" + p._data);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }).start();
 
@@ -86,8 +91,8 @@ public class ChatClient {
                         continue;
                     }
                     String str = new String(receive_packet.getData());   //get data from the received udp packet
-                    str = str.trim();
-                    System.out.println("A:" + str);
+                    //str = str.trim();
+                    //System.out.println("A:" + str);
                     String[] parts = str.split(":");
                     String ip = receive_packet.getAddress().getHostAddress().trim();
                     int port = receive_packet.getPort();
@@ -114,10 +119,12 @@ public class ChatClient {
         }).start();
 
         //
-        if (!register()) {
-            System.err.println("Can't register");
-            System.exit(0);
-        }
+        new Thread(() -> {
+            if (!register()) {
+                System.err.println("Can't register");
+                System.exit(0);
+            }
+        }).start();
 
     }
 
@@ -126,7 +133,9 @@ public class ChatClient {
             String cmd = String.format("register;%s;%s", _uwid, _w_name);
             byte[] buff = cmd.getBytes();
             DatagramPacket sp = new DatagramPacket(buff, buff.length, _server_ip, _server_udp_port);
-            _dg_socket.send(sp);
+            synchronized (_syn_socket) {
+                _dg_socket.send(sp);
+            }
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -139,7 +148,9 @@ public class ChatClient {
             String cmd = String.format("drop_out;%s;%s", _uwid);
             byte[] buff = cmd.getBytes();
             DatagramPacket sp = new DatagramPacket(buff, buff.length, _server_ip, _server_udp_port);
-            _dg_socket.send(sp);
+            synchronized (_syn_socket) {
+                _dg_socket.send(sp);
+            }
             return true;
         } catch (IOException e) {
             e.printStackTrace();
@@ -151,7 +162,7 @@ public class ChatClient {
         synchronized (_syn) {
             _table.clear();
             //
-            System.out.println(p._data);
+            System.out.println("Update table:" + p._data);
             String[] parts = p._data.split(";");
             for (int i = 0; i < parts.length / 4; i++) {
                 String uwid = parts[i * 4];
@@ -173,7 +184,9 @@ public class ChatClient {
                 byte[] buff = msg.getBytes();
                 try {
                     DatagramPacket sp = new DatagramPacket(buff, buff.length, InetAddress.getByName(peer._ip), peer._port);
-                    _dg_socket.send(sp);
+                    synchronized (_syn_socket) {
+                        _dg_socket.send(sp);
+                    }
                 } catch (IOException ignored) {
 
                 }
@@ -186,7 +199,9 @@ public class ChatClient {
         try {
             byte[] buff = cmd.getBytes();
             DatagramPacket sp = new DatagramPacket(buff, buff.length, _server_ip, _server_udp_port);
-            _dg_socket.send(sp);
+            synchronized (_syn_socket) {
+                _dg_socket.send(sp);
+            }
             return true;
         } catch (IOException e) {
             e.printStackTrace();
